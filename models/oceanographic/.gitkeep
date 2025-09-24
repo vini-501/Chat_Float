@@ -1,0 +1,13 @@
+# Placeholder for ML Models
+
+This directory will contain the trained machine learning models from the oceanographic analysis project.
+
+## Expected Models
+
+1. **qc_classifier_model.joblib** - Quality control classifier
+2. **ocean_cluster_model.joblib** - Ocean region identifier  
+3. **salinity_regressor_model.joblib** - Salinity forecasting model
+4. **feature_means.joblib** - Feature means for imputation
+5. **scaler.joblib** - StandardScaler for normalization
+
+Copy these files from your ML training environment to this directory to integrate them with the Next.js application.
