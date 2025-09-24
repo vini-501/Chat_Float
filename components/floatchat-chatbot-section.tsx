@@ -97,7 +97,7 @@ export default function FloatChatChatbotSection({
   ]
 
   const exampleQueries = [
-    "Show me ocean temperature patterns in the Pacific",
+    "Show me ocean temperature patterns in the Indian",
     "Analyze salinity levels near the equator", 
     "Display current density measurements",
     "Track marine biodiversity changes",
@@ -283,66 +283,66 @@ export default function FloatChatChatbotSection({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-teal-900 relative overflow-hidden">
-      {/* Ocean-inspired animated background */}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 relative overflow-hidden">
+      {/* Light ocean-inspired animated background */}
       <div className="fixed inset-0 pointer-events-none">
-        {/* Floating plankton/bubble particles */}
-        <div className="absolute top-20 left-10 w-3 h-3 bg-cyan-400/30 rounded-full animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-2 h-2 bg-teal-300/40 rounded-full animate-bounce"></div>
-        <div className="absolute bottom-40 left-1/4 w-4 h-4 bg-blue-400/20 rounded-full animate-ping"></div>
-        <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-cyan-300/50 rounded-full animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-3 h-3 bg-teal-400/30 rounded-full animate-bounce"></div>
-        <div className="absolute top-60 left-1/2 w-1 h-1 bg-blue-300/60 rounded-full animate-ping"></div>
-        <div className="absolute bottom-60 left-20 w-2 h-2 bg-cyan-200/40 rounded-full animate-pulse"></div>
+        {/* Floating bubble particles */}
+        <div className="absolute top-20 left-10 w-3 h-3 bg-cyan-300/40 rounded-full animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-2 h-2 bg-blue-300/50 rounded-full animate-bounce"></div>
+        <div className="absolute bottom-40 left-1/4 w-4 h-4 bg-teal-300/30 rounded-full animate-ping"></div>
+        <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-cyan-400/60 rounded-full animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-3 h-3 bg-blue-400/40 rounded-full animate-bounce"></div>
+        <div className="absolute top-60 left-1/2 w-1 h-1 bg-teal-400/70 rounded-full animate-ping"></div>
+        <div className="absolute bottom-60 left-20 w-2 h-2 bg-cyan-300/50 rounded-full animate-pulse"></div>
         
-        {/* Subtle wave overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 via-transparent to-teal-900/10"></div>
+        {/* Subtle light wave overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-blue-100/30 via-transparent to-cyan-100/20"></div>
       </div>
 
       {/* Ocean Intelligence Hub - 80% Screen Size */}
       <div className="container mx-auto px-4 py-12 relative z-10">
         {/* Main Title */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-400 to-blue-400">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600">
             Ocean Intelligence Hub
           </h1>
-          <p className="text-cyan-200/80 text-lg">Dive deep into marine data with AI-powered insights</p>
+          <p className="text-slate-600 text-lg">Dive deep into marine data with AI-powered insights</p>
         </div>
 
         <motion.div
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: isVisible ? 0 : 50, opacity: isVisible ? 1 : 0 }}
           transition={{ type: "spring", stiffness: 100, damping: 20 }}
-          className="w-4/5 mx-auto max-w-6xl bg-slate-800/20 backdrop-blur-xl border border-cyan-500/30 rounded-3xl shadow-2xl"
+          className="w-4/5 mx-auto max-w-6xl bg-white/80 backdrop-blur-xl border border-cyan-200/50 rounded-3xl shadow-2xl"
           style={{
-            background: "linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 58, 138, 0.6) 50%, rgba(6, 78, 59, 0.8) 100%)",
-            boxShadow: "0 25px 50px -12px rgba(6, 182, 212, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 249, 255, 0.8) 50%, rgba(236, 254, 255, 0.9) 100%)",
+            boxShadow: "0 25px 50px -12px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)"
           }}
         >
         {/* Header with Ocean Globe */}
-        <div className="flex items-center justify-between p-4 border-b border-cyan-500/20">
+        <div className="flex items-center justify-between p-4 border-b border-cyan-200/30">
           <div className="flex items-center gap-3">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="w-8 h-8 bg-gradient-to-r from-cyan-400 to-teal-400 rounded-full flex items-center justify-center"
+              className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-full flex items-center justify-center shadow-md"
             >
-              <Globe className="h-5 w-5 text-slate-900" />
+              <Globe className="h-5 w-5 text-white" />
             </motion.div>
             <div>
-              <h3 className="text-cyan-100 font-semibold text-sm">Ask the Ocean AI</h3>
-              <p className="text-cyan-300/70 text-xs">Marine Intelligence Hub</p>
+              <h3 className="text-slate-700 font-semibold text-sm">Ask the Ocean AI</h3>
+              <p className="text-slate-500 text-xs">Marine Intelligence Hub</p>
             </div>
           </div>
           
           {/* Mode Toggle */}
-          <div className="flex bg-slate-700/50 rounded-lg p-1">
+          <div className="flex bg-slate-100/80 rounded-lg p-1">
             <button
               onClick={() => setChatMode("conversation")}
               className={`px-3 py-1 text-xs rounded transition-all ${
                 chatMode === "conversation" 
-                  ? "bg-cyan-500 text-slate-900" 
-                  : "text-cyan-300 hover:text-cyan-100"
+                  ? "bg-cyan-500 text-white shadow-sm" 
+                  : "text-slate-600 hover:text-slate-800"
               }`}
             >
               <MessageCircle className="h-3 w-3 inline mr-1" />
@@ -352,8 +352,8 @@ export default function FloatChatChatbotSection({
               onClick={() => setChatMode("explorer")}
               className={`px-3 py-1 text-xs rounded transition-all ${
                 chatMode === "explorer" 
-                  ? "bg-cyan-500 text-slate-900" 
-                  : "text-cyan-300 hover:text-cyan-100"
+                  ? "bg-cyan-500 text-white shadow-sm" 
+                  : "text-slate-600 hover:text-slate-800"
               }`}
             >
               <Eye className="h-3 w-3 inline mr-1" />
@@ -376,8 +376,8 @@ export default function FloatChatChatbotSection({
               >
                 {message.type === "bot" && (
                   <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 to-teal-400 rounded-full flex items-center justify-center shadow-lg">
-                      <Waves className="h-4 w-4 text-slate-900" />
+                    <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-full flex items-center justify-center shadow-lg">
+                      <Waves className="h-4 w-4 text-white" />
                     </div>
                   </div>
                 )}
@@ -387,8 +387,8 @@ export default function FloatChatChatbotSection({
                   <div
                     className={`rounded-2xl p-3 backdrop-blur-sm border ${
                       message.type === "user"
-                        ? "bg-gradient-to-r from-cyan-500/80 to-teal-500/80 text-white border-cyan-400/50 ml-auto shadow-lg"
-                        : "bg-slate-700/40 border-cyan-500/30 text-cyan-50"
+                        ? "bg-gradient-to-r from-cyan-500 to-teal-500 text-white border-cyan-300/50 ml-auto shadow-lg"
+                        : "bg-white/70 border-cyan-200/40 text-slate-700"
                     }`}
                     style={{
                       borderRadius: message.type === "bot" ? "20px 20px 20px 5px" : "20px 20px 5px 20px",
@@ -402,7 +402,7 @@ export default function FloatChatChatbotSection({
                       {message.content.split(/(\b(?:temperature|salinity|density|ocean|marine|depth|current)\b)/gi).map((part, index) => {
                         const isScientificTerm = /^(temperature|salinity|density|ocean|marine|depth|current)$/i.test(part)
                         return isScientificTerm ? (
-                          <span key={index} className="text-cyan-300 font-semibold bg-cyan-500/20 px-1 rounded">
+                          <span key={index} className="text-cyan-600 font-semibold bg-cyan-100/80 px-1 rounded">
                             {part}
                           </span>
                         ) : (
@@ -420,7 +420,7 @@ export default function FloatChatChatbotSection({
                             variant="secondary"
                             size="sm"
                             onClick={() => handleAction(action)}
-                            className="text-xs h-7 justify-start hover:bg-cyan-500/30 hover:text-cyan-100 transition-all bg-slate-600/40 text-cyan-200 border-cyan-500/30"
+                            className="text-xs h-7 justify-start hover:bg-cyan-100 hover:text-cyan-700 transition-all bg-white/60 text-cyan-600 border-cyan-200/50"
                           >
                             {action.icon && <action.icon className="h-3 w-3 mr-2" />}
                             {action.label}
@@ -433,8 +433,8 @@ export default function FloatChatChatbotSection({
 
                 {message.type === "user" && (
                   <div className="flex-shrink-0 order-3">
-                    <div className="w-8 h-8 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full flex items-center justify-center shadow-lg">
-                      <User className="h-4 w-4 text-slate-900" />
+                    <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full flex items-center justify-center shadow-lg">
+                      <User className="h-4 w-4 text-white" />
                     </div>
                   </div>
                 )}
@@ -450,11 +450,11 @@ export default function FloatChatChatbotSection({
               className="flex gap-3"
             >
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 to-teal-400 rounded-full flex items-center justify-center shadow-lg">
-                  <Waves className="h-4 w-4 text-slate-900 animate-pulse" />
+                <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-full flex items-center justify-center shadow-lg">
+                  <Waves className="h-4 w-4 text-white animate-pulse" />
                 </div>
               </div>
-              <div className="bg-slate-700/40 backdrop-blur-sm rounded-2xl p-3 border border-cyan-500/30">
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-3 border border-cyan-200/40">
                 <div className="flex items-center gap-2">
                   {/* Wave ripple animation */}
                   <div className="flex items-center gap-1">
@@ -474,7 +474,7 @@ export default function FloatChatChatbotSection({
                       className="w-2 h-2 bg-cyan-400 rounded-full"
                     />
                   </div>
-                  <span className="text-xs text-cyan-300 ml-2">Ocean AI is analyzing...</span>
+                  <span className="text-xs text-slate-600 ml-2">Ocean AI is analyzing...</span>
                 </div>
               </div>
             </motion.div>
@@ -483,13 +483,13 @@ export default function FloatChatChatbotSection({
         </div>
 
         {/* Command Console Input Bar */}
-        <div className="p-6 border-t border-cyan-500/20">
+        <div className="p-6 border-t border-cyan-200/30">
           <div className="relative">
-            <div className="bg-slate-800/60 backdrop-blur-sm border border-cyan-500/40 rounded-2xl p-4 shadow-inner">
+            <div className="bg-white/60 backdrop-blur-sm border border-cyan-200/50 rounded-2xl p-4 shadow-inner">
               <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 to-teal-400 rounded-full flex items-center justify-center">
-                    <Settings className="h-4 w-4 text-slate-900" />
+                  <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-full flex items-center justify-center">
+                    <Settings className="h-4 w-4 text-white" />
                   </div>
                 </div>
                 <Input
@@ -503,13 +503,13 @@ export default function FloatChatChatbotSection({
                     }
                   }}
                   placeholder="Ask the Ocean…"
-                  className="flex-1 bg-transparent border-0 text-cyan-100 placeholder:text-cyan-400/70 focus:ring-0 focus:outline-none text-lg h-12"
+                  className="flex-1 bg-transparent border-0 text-slate-700 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-lg h-12"
                   disabled={isTyping}
                 />
                 <Button
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim() || isTyping}
-                  className="w-12 h-12 p-0 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 disabled:opacity-50 shadow-lg"
+                  className="w-12 h-12 p-0 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 disabled:opacity-50 shadow-lg text-white"
                 >
                   <Send className="h-5 w-5" />
                 </Button>
@@ -530,7 +530,7 @@ export default function FloatChatChatbotSection({
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.1 }}
                     onClick={() => handleExampleClick(example)}
-                    className="px-3 py-1 text-xs bg-slate-700/50 backdrop-blur-sm border border-cyan-500/30 rounded-full hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all duration-200 text-cyan-300 hover:text-cyan-100"
+                    className="px-3 py-1 text-xs bg-white/60 backdrop-blur-sm border border-cyan-200/50 rounded-full hover:bg-cyan-50 hover:border-cyan-300/70 transition-all duration-200 text-slate-600 hover:text-slate-800"
                   >
                     {example.split(' ').slice(0, 3).join(' ')}...
                   </motion.button>

@@ -5,7 +5,7 @@ import Navigation from "@/components/navigation"
 import FloatChatHero from "@/components/floatchat-hero"
 import SectionWrapper from "@/components/section-wrapper"
 import OceanographicDashboard from "@/components/oceanographic-dashboard"
-import InsightsSection from "@/components/insights-section"
+import FloatChatInsightsSection from "@/components/floatchat-insights-section"
 import AboutSection from "@/components/about-section"
 import FloatChatChatbotSection from "@/components/floatchat-chatbot-section"
 import MLInsightsDemo from "@/components/ml-insights-demo"
@@ -43,7 +43,9 @@ export default function HomePage() {
         return <FloatChatHero />
 
       case "insights":
-        return <MLInsightsDemo />
+
+        return <FloatChatInsightsSection />
+
 
       case "dashboard":
         return <OceanographicDashboard />
