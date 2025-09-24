@@ -8,6 +8,7 @@ import OceanographicDashboard from "@/components/oceanographic-dashboard"
 import FloatChatInsightsSection from "@/components/floatchat-insights-section"
 import AboutSection from "@/components/about-section"
 import FloatChatChatbotSection from "@/components/floatchat-chatbot-section"
+import MLInsightsDemo from "@/components/ml-insights-demo"
 
 export default function HomePage() {
   const [activeSection, setActiveSection] = useState("home")
@@ -42,7 +43,9 @@ export default function HomePage() {
         return <FloatChatHero />
 
       case "insights":
+
         return <FloatChatInsightsSection />
+
 
       case "dashboard":
         return <OceanographicDashboard />
