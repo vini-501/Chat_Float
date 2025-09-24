@@ -23,7 +23,7 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
 
   const navItems = [
     { id: "home", label: "Home" },
-    { id: "insights", label: "Features" },
+    { id: "insights", label: "Insights" },
     { id: "dashboard", label: "Dashboard" },
     { id: "chatbot", label: "Chat" },
     { id: "about", label: "About" },

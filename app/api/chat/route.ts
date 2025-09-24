@@ -65,16 +65,25 @@ async function processOceanographicQuery(message: string, mode: string): Promise
   try {
     console.log('🤖 Processing query:', message)
     
-    // Step 1: Convert natural language to SQL query
-    const sqlQuery = convertToSQL(message)
-    console.log('🔍 Generated SQL:', sqlQuery)
+    // Handle specific queries with direct database calls
+    const query = message.toLowerCase()
     
-    // Step 2: Execute SQL query against database
-    const rawData = await executeSQL(sqlQuery)
+    // Check for total count queries
+    if (query.includes('total') && (query.includes('profile') || query.includes('count') || query.includes('how many'))) {
+      const stats = await ArgoDatabase.getSummaryStats()
+      return generateTotalCountResponse(stats)
+    }
+    
+    // Step 1: Convert natural language to database query
+    const filters = analyzeQuery(message)
+    console.log('🔍 Query filters:', filters)
+    
+    // Step 2: Execute appropriate database method
+    const rawData = await executeFilteredQuery(filters)
     console.log('📊 Raw data retrieved:', rawData.length, 'records')
     
     // Step 3: Convert raw data to human-readable response
-    const humanResponse = await convertToHumanResponse(message, rawData, sqlQuery)
+    const humanResponse = await convertToHumanResponse(message, rawData, '')
     
     return humanResponse
     
@@ -213,103 +222,152 @@ function convertToSQL(naturalQuery: string): string {
   return sql
 }
 
-async function executeSQL(sqlQuery: string): Promise<any[]> {
+async function executeFilteredQuery(filters: any): Promise<any[]> {
   try {
-    // Use Supabase to execute raw SQL
-    const { data, error } = await ArgoDatabase.supabase
-      .rpc('execute_sql', { query: sqlQuery })
+    console.log('🔍 Executing filtered query with:', filters)
     
-    if (error) {
-      console.error('SQL execution error:', error)
-      // Fallback to our existing methods for common queries
-      return await executeFallbackQuery(sqlQuery)
+    // Geographic filters
+    if (filters.geographic && Object.keys(filters.geographic).length > 0) {
+      const { minLat, maxLat, minLon, maxLon } = filters.geographic
+      if (minLat !== undefined && maxLat !== undefined && minLon !== undefined && maxLon !== undefined) {
+        return await ArgoDatabase.getProfilesByBoundingBox(minLat, maxLat, minLon, maxLon, 100)
+      }
     }
     
-    return data || []
+    // Temperature filters
+    if (filters.temperature && (filters.temperature.min !== undefined || filters.temperature.max !== undefined)) {
+      return await ArgoDatabase.getProfilesByTemperature(filters.temperature.min, filters.temperature.max, 100)
+    }
+    
+    // Salinity filters
+    if (filters.salinity && (filters.salinity.min !== undefined || filters.salinity.max !== undefined)) {
+      return await ArgoDatabase.getProfilesBySalinity(filters.salinity.min, filters.salinity.max, 100)
+    }
+    
+    // Date filters
+    if (filters.timeRange && filters.timeRange.recent) {
+      return await ArgoDatabase.getRecentProfiles(100)
+    }
+    
+    // Default: get recent profiles
+    return await ArgoDatabase.getRecentProfiles(50)
+    
   } catch (error) {
-    console.error('Error executing SQL:', error)
-    // Fallback to our existing methods
-    return await executeFallbackQuery(sqlQuery)
+    console.error('Error executing filtered query:', error)
+    // Fallback to recent profiles
+    return await ArgoDatabase.getRecentProfiles(20)
   }
 }
 
-async function executeFallbackQuery(sqlQuery: string): Promise<any[]> {
-  // Parse the SQL to determine what method to use
-  const sql = sqlQuery.toLowerCase()
+function generateTotalCountResponse(stats: any): string {
+  const totalProfiles = stats.totalProfiles || 0
   
-  if (sql.includes('shallow_temp_mean >= 25')) {
-    return await ArgoDatabase.getProfilesByTemperature(25, undefined, 50)
-  } else if (sql.includes('shallow_temp_mean <= 15')) {
-    return await ArgoDatabase.getProfilesByTemperature(undefined, 15, 50)
-  } else if (sql.includes('latitude between') && sql.includes('longitude between')) {
-    // Extract coordinates for bounding box
-    const latMatch = sql.match(/latitude between (-?\d+) and (-?\d+)/)
-    const lonMatch = sql.match(/longitude between (-?\d+) and (-?\d+)/)
-    if (latMatch && lonMatch) {
-      return await ArgoDatabase.getProfilesByBoundingBox(
-        parseFloat(latMatch[1]), parseFloat(latMatch[2]),
-        parseFloat(lonMatch[1]), parseFloat(lonMatch[2]),
-        50
-      )
-    }
+  let response = `🌊 **ARGO Database Overview**\n\n`
+  response += `📊 **Total Oceanographic Profiles: ${totalProfiles.toLocaleString()}**\n\n`
+  
+  if (stats.dateRange) {
+    response += `📅 **Data Coverage:**\n`
+    response += `• **Earliest:** ${new Date(stats.dateRange.earliest).toLocaleDateString()}\n`
+    response += `• **Latest:** ${new Date(stats.dateRange.latest).toLocaleDateString()}\n\n`
   }
   
-  // Default fallback
-  return await ArgoDatabase.getRecentProfiles(50)
-}
-
-async function convertToHumanResponse(originalQuery: string, rawData: any[], sqlQuery: string): Promise<string> {
-  if (!rawData || rawData.length === 0) {
-    return `I searched the ARGO database using the query "${originalQuery}" but couldn't find any matching profiles. 
-
-**SQL Query Used:**
-\`\`\`sql
-${sqlQuery}
-\`\`\`
-
-Try adjusting your search criteria or asking about a different region or time period.`
+  if (stats.temperatureRange) {
+    response += `🌡️ **Temperature Range:**\n`
+    response += `• **${stats.temperatureRange.min.toFixed(1)}°C** to **${stats.temperatureRange.max.toFixed(1)}°C**\n\n`
   }
   
-  // Check if this is a statistical query
-  if (rawData[0]?.profile_count !== undefined) {
-    return generateStatisticalResponse(originalQuery, rawData[0], sqlQuery)
+  if (stats.salinityRange) {
+    response += `🧂 **Salinity Range:**\n`
+    response += `• **${stats.salinityRange.min.toFixed(2)} PSU** to **${stats.salinityRange.max.toFixed(2)} PSU**\n\n`
   }
   
-  // Generate detailed analysis response
-  return generateDetailedAnalysisResponse(originalQuery, rawData, sqlQuery)
-}
-
-function generateStatisticalResponse(query: string, stats: any, sqlQuery: string): string {
-  let response = `**ARGO Database Analysis Results**\n\n`
-  response += `**Query:** "${query}"\n\n`
-  
-  response += `**Statistical Summary:**\n`
-  response += `• **Total Profiles:** ${stats.profile_count?.toLocaleString() || 'N/A'}\n`
-  
-  if (stats.avg_temperature) {
-    response += `• **Average Temperature:** ${stats.avg_temperature.toFixed(2)}°C\n`
-    response += `• **Temperature Range:** ${stats.min_temperature?.toFixed(1)}°C to ${stats.max_temperature?.toFixed(1)}°C\n`
+  if (stats.geographicBounds) {
+    response += `🗺️ **Global Coverage:**\n`
+    response += `• **Latitude:** ${stats.geographicBounds.minLat.toFixed(1)}° to ${stats.geographicBounds.maxLat.toFixed(1)}°\n`
+    response += `• **Longitude:** ${stats.geographicBounds.minLon.toFixed(1)}° to ${stats.geographicBounds.maxLon.toFixed(1)}°\n\n`
   }
   
-  if (stats.avg_salinity) {
-    response += `• **Average Salinity:** ${stats.avg_salinity.toFixed(2)} PSU\n`
-    response += `• **Salinity Range:** ${stats.min_salinity?.toFixed(2)} to ${stats.max_salinity?.toFixed(2)} PSU\n`
-  }
-  
-  if (stats.avg_pressure) {
-    response += `• **Average Pressure:** ${stats.avg_pressure.toFixed(1)} dbar\n`
-  }
-  
-  response += `\n**SQL Query Used:**\n`
-  response += `\`\`\`sql\n${sqlQuery}\n\`\`\``
+  response += `💡 **What would you like to explore?**\n`
+  response += `• "Show me warm water profiles"\n`
+  response += `• "Analyze salinity in the Indian Ocean"\n`
+  response += `• "Recent measurements from the Arabian Sea"\n`
+  response += `• "Temperature trends near the equator"`
   
   return response
 }
 
-function generateDetailedAnalysisResponse(query: string, profiles: any[], sqlQuery: string): string {
-  let response = `**ARGO Profile Analysis Results**\n\n`
-  response += `**Query:** "${query}"\n`
-  response += `**Profiles Found:** ${profiles.length}\n\n`
+async function convertToHumanResponse(originalQuery: string, rawData: any[], sqlQuery: string): Promise<string> {
+  if (!rawData || rawData.length === 0) {
+    return `🌊 I searched the ARGO database for "${originalQuery}" but couldn't find any matching oceanographic profiles.
+
+**Suggestions:**
+• Try a different geographic region (e.g., "Indian Ocean", "Arabian Sea")
+• Adjust temperature/salinity criteria
+• Ask about recent data or specific time periods
+• Use broader search terms
+
+Would you like me to suggest some alternative queries or show you what data is available?`
+  }
+  
+  // Check if this is a statistical query
+  if (rawData[0]?.profile_count !== undefined) {
+    return generateStatisticalResponse(originalQuery, rawData[0])
+  }
+  
+  // Generate detailed analysis response
+  return generateDetailedAnalysisResponse(originalQuery, rawData)
+}
+
+function generateStatisticalResponse(query: string, stats: any): string {
+  let response = `🌊 **Ocean Data Analysis Results**\n\n`
+  
+  const profileCount = stats.profile_count || 0
+  response += `📊 **Found ${profileCount.toLocaleString()} oceanographic profiles** matching your criteria\n\n`
+  
+  if (stats.avg_temperature) {
+    response += `🌡️ **Temperature Analysis:**\n`
+    response += `• Average: **${stats.avg_temperature.toFixed(1)}°C**\n`
+    response += `• Range: ${stats.min_temperature?.toFixed(1)}°C to ${stats.max_temperature?.toFixed(1)}°C\n`
+    
+    if (stats.avg_temperature > 25) {
+      response += `• *Warm tropical waters detected*\n`
+    } else if (stats.avg_temperature < 15) {
+      response += `• *Cool waters, possibly from higher latitudes*\n`
+    }
+    response += `\n`
+  }
+  
+  if (stats.avg_salinity) {
+    response += `🧂 **Salinity Analysis:**\n`
+    response += `• Average: **${stats.avg_salinity.toFixed(2)} PSU**\n`
+    response += `• Range: ${stats.min_salinity?.toFixed(2)} to ${stats.max_salinity?.toFixed(2)} PSU\n`
+    
+    if (stats.avg_salinity > 35) {
+      response += `• *High salinity - evaporation-dominated region*\n`
+    } else if (stats.avg_salinity < 34) {
+      response += `• *Lower salinity - freshwater influence detected*\n`
+    }
+    response += `\n`
+  }
+  
+  if (stats.avg_pressure) {
+    response += `📏 **Depth Analysis:**\n`
+    response += `• Average measurement depth: **${stats.avg_pressure.toFixed(0)} meters**\n\n`
+  }
+  
+  response += `💡 **What would you like to explore next?**\n`
+  response += `• View temperature/salinity charts\n`
+  response += `• See geographic distribution on map\n`
+  response += `• Export data for further analysis\n`
+  response += `• Compare with other regions`
+  
+  return response
+}
+
+function generateDetailedAnalysisResponse(query: string, profiles: any[]): string {
+  const profileCount = profiles.length
+  let response = `🌊 **Ocean Data Analysis**\n\n`
+  response += `📊 **Found ${profileCount} oceanographic profiles** for your query\n\n`
   
   // Temperature analysis
   const temps = profiles.map(p => p.shallow_temp_mean || p.temp_mean).filter(t => t != null)
@@ -317,11 +375,24 @@ function generateDetailedAnalysisResponse(query: string, profiles: any[], sqlQue
     const avgTemp = temps.reduce((a, b) => a + b, 0) / temps.length
     const minTemp = Math.min(...temps)
     const maxTemp = Math.max(...temps)
+    const tempVariation = maxTemp - minTemp
     
-    response += `**Temperature Analysis:**\n`
-    response += `• Range: ${minTemp.toFixed(1)}°C to ${maxTemp.toFixed(1)}°C\n`
-    response += `• Average: ${avgTemp.toFixed(1)}°C\n`
-    response += `• Variation: ${(maxTemp - minTemp).toFixed(1)}°C\n\n`
+    response += `🌡️ **Temperature Insights:**\n`
+    response += `• **Average:** ${avgTemp.toFixed(1)}°C\n`
+    response += `• **Range:** ${minTemp.toFixed(1)}°C to ${maxTemp.toFixed(1)}°C\n`
+    
+    if (tempVariation > 10) {
+      response += `• *High thermal diversity (${tempVariation.toFixed(1)}°C variation)*\n`
+    } else {
+      response += `• *Relatively uniform temperatures (${tempVariation.toFixed(1)}°C variation)*\n`
+    }
+    
+    if (avgTemp > 25) {
+      response += `• *Warm tropical/subtropical waters*\n`
+    } else if (avgTemp < 15) {
+      response += `• *Cool waters - higher latitude or upwelling zone*\n`
+    }
+    response += `\n`
   }
   
   // Salinity analysis
@@ -330,50 +401,93 @@ function generateDetailedAnalysisResponse(query: string, profiles: any[], sqlQue
     const avgSal = sals.reduce((a, b) => a + b, 0) / sals.length
     const minSal = Math.min(...sals)
     const maxSal = Math.max(...sals)
+    const salVariation = maxSal - minSal
     
-    response += `**Salinity Analysis:**\n`
-    response += `• Range: ${minSal.toFixed(2)} to ${maxSal.toFixed(2)} PSU\n`
-    response += `• Average: ${avgSal.toFixed(2)} PSU\n`
-    response += `• Variation: ${(maxSal - minSal).toFixed(2)} PSU\n\n`
+    response += `🧂 **Salinity Patterns:**\n`
+    response += `• **Average:** ${avgSal.toFixed(2)} PSU\n`
+    response += `• **Range:** ${minSal.toFixed(2)} to ${maxSal.toFixed(2)} PSU\n`
+    
+    if (avgSal > 35) {
+      response += `• *High salinity - evaporation exceeds precipitation*\n`
+    } else if (avgSal < 34) {
+      response += `• *Lower salinity - freshwater input or high precipitation*\n`
+    } else {
+      response += `• *Typical oceanic salinity levels*\n`
+    }
+    
+    if (salVariation > 2) {
+      response += `• *Significant salinity variation (${salVariation.toFixed(2)} PSU)*\n`
+    }
+    response += `\n`
   }
   
   // Geographic analysis
   const lats = profiles.map(p => p.latitude).filter(lat => lat != null)
   const lons = profiles.map(p => p.longitude).filter(lon => lon != null)
   if (lats.length > 0 && lons.length > 0) {
-    response += `**Geographic Distribution:**\n`
-    response += `• Latitude: ${Math.min(...lats).toFixed(2)}°N to ${Math.max(...lats).toFixed(2)}°N\n`
-    response += `• Longitude: ${Math.min(...lons).toFixed(2)}°E to ${Math.max(...lons).toFixed(2)}°E\n`
-    response += `• Coverage: ${lats.length} locations\n\n`
+    const latRange = Math.max(...lats) - Math.min(...lats)
+    const lonRange = Math.max(...lons) - Math.min(...lons)
+    
+    response += `🗺️ **Geographic Coverage:**\n`
+    response += `• **Latitude:** ${Math.min(...lats).toFixed(2)}° to ${Math.max(...lats).toFixed(2)}°\n`
+    response += `• **Longitude:** ${Math.min(...lons).toFixed(2)}° to ${Math.max(...lons).toFixed(2)}°\n`
+    response += `• **Area:** ~${(latRange * lonRange * 111 * 111).toFixed(0)} km² coverage\n`
+    response += `• **Locations:** ${lats.length} measurement points\n\n`
   }
   
   // Quality assessment
   const qcFlags = profiles.map(p => p.profile_temp_qc).filter(qc => qc != null)
   if (qcFlags.length > 0) {
     const goodQuality = qcFlags.filter(qc => qc === 'A' || qc === '1').length
-    response += `**Data Quality:**\n`
-    response += `• Good Quality: ${goodQuality}/${qcFlags.length} profiles (${(goodQuality/qcFlags.length*100).toFixed(1)}%)\n\n`
+    const qualityPercent = (goodQuality/qcFlags.length*100).toFixed(1)
+    
+    response += `✅ **Data Quality Assessment:**\n`
+    response += `• **${goodQuality}/${qcFlags.length} profiles** passed quality control (${qualityPercent}%)\n`
+    
+    if (parseFloat(qualityPercent) > 80) {
+      response += `• *Excellent data quality for reliable analysis*\n`
+    } else if (parseFloat(qualityPercent) > 60) {
+      response += `• *Good data quality with some flagged measurements*\n`
+    } else {
+      response += `• *Mixed quality - consider filtering for high-quality data only*\n`
+    }
+    response += `\n`
   }
   
-  // Sample data
+  // Sample data and recent measurements
   if (profiles.length > 0) {
-    response += `**Sample Profile:**\n`
     const sample = profiles[0]
-    if (sample.date) response += `• Date: ${new Date(sample.date).toLocaleDateString()}\n`
-    if (sample.latitude && sample.longitude) response += `• Location: ${sample.latitude.toFixed(2)}°N, ${sample.longitude.toFixed(2)}°E\n`
-    if (sample.shallow_temp_mean) response += `• Temperature: ${sample.shallow_temp_mean.toFixed(1)}°C\n`
-    if (sample.shallow_psal_mean) response += `• Salinity: ${sample.shallow_psal_mean.toFixed(2)} PSU\n`
+    response += `📋 **Latest Measurement:**\n`
+    if (sample.date) {
+      const measurementDate = new Date(sample.date)
+      const daysAgo = Math.floor((Date.now() - measurementDate.getTime()) / (1000 * 60 * 60 * 24))
+      response += `• **Date:** ${measurementDate.toLocaleDateString()} (${daysAgo} days ago)\n`
+    }
+    if (sample.latitude && sample.longitude) {
+      response += `• **Location:** ${sample.latitude.toFixed(2)}°, ${sample.longitude.toFixed(2)}°\n`
+    }
+    if (sample.shallow_temp_mean) {
+      response += `• **Temperature:** ${sample.shallow_temp_mean.toFixed(1)}°C\n`
+    }
+    if (sample.shallow_psal_mean) {
+      response += `• **Salinity:** ${sample.shallow_psal_mean.toFixed(2)} PSU\n`
+    }
+    response += `\n`
   }
   
-  response += `\n**SQL Query Used:**\n`
-  response += `\`\`\`sql\n${sqlQuery}\n\`\`\``
+  response += `🎯 **Next Steps:**\n`
+  response += `• 📊 View interactive charts and trends\n`
+  response += `• 🗺️ Explore data on an interactive map\n`
+  response += `• 📁 Export data for detailed analysis\n`
+  response += `• 🔍 Refine search with additional filters\n\n`
   
-  response += `\n\nWould you like me to show you charts, maps, or export this data?`
+  response += `*Ask me to show charts, maps, or help you explore specific aspects of this data!*`
   
   return response
 }
 
 function analyzeQuery(query: string) {
+  const lowerQuery = query.toLowerCase()
   const filters: any = {
     geographic: {},
     temperature: {},
@@ -381,46 +495,59 @@ function analyzeQuery(query: string) {
     timeRange: {}
   }
   
-  // Geographic analysis
-  if (query.includes('indian ocean')) {
+  // Geographic analysis with more precise boundaries
+  if (lowerQuery.includes('indian ocean')) {
     filters.geographic = { minLat: -40, maxLat: 30, minLon: 20, maxLon: 120 }
-  } else if (query.includes('arabian sea')) {
+  } else if (lowerQuery.includes('arabian sea')) {
     filters.geographic = { minLat: 10, maxLat: 25, minLon: 50, maxLon: 80 }
-  } else if (query.includes('bay of bengal')) {
+  } else if (lowerQuery.includes('bay of bengal')) {
     filters.geographic = { minLat: 5, maxLat: 25, minLon: 80, maxLon: 100 }
-  } else if (query.includes('equator')) {
-    filters.geographic = { minLat: -10, maxLat: 10, minLon: 20, maxLon: 120 }
+  } else if (lowerQuery.includes('equator')) {
+    filters.geographic = { minLat: -10, maxLat: 10, minLon: -180, maxLon: 180 }
+  } else if (lowerQuery.includes('tropical')) {
+    filters.geographic = { minLat: -23.5, maxLat: 23.5, minLon: -180, maxLon: 180 }
+  } else if (lowerQuery.includes('pacific')) {
+    filters.geographic = { minLat: -60, maxLat: 60, minLon: 120, maxLon: -70 }
+  } else if (lowerQuery.includes('atlantic')) {
+    filters.geographic = { minLat: -60, maxLat: 70, minLon: -80, maxLon: 20 }
   }
   
-  // Temperature analysis
-  if (query.includes('warm') || query.includes('hot') || query.includes('high temperature')) {
+  // Temperature analysis with specific thresholds
+  if (lowerQuery.includes('warm') || lowerQuery.includes('hot')) {
     filters.temperature.min = 25
-  } else if (query.includes('cold') || query.includes('cool') || query.includes('low temperature')) {
+  } else if (lowerQuery.includes('cold') || lowerQuery.includes('cool')) {
     filters.temperature.max = 15
-  } else if (query.includes('temperature')) {
-    // General temperature query - no specific filter but indicates temperature focus
-    filters.temperature.general = true
+  } else if (lowerQuery.includes('temperature above')) {
+    const tempMatch = lowerQuery.match(/temperature above (\d+)/)
+    if (tempMatch) filters.temperature.min = parseFloat(tempMatch[1])
+  } else if (lowerQuery.includes('temperature below')) {
+    const tempMatch = lowerQuery.match(/temperature below (\d+)/)
+    if (tempMatch) filters.temperature.max = parseFloat(tempMatch[1])
   }
   
-  // Salinity analysis
-  if (query.includes('high salinity') || query.includes('salty')) {
+  // Salinity analysis with specific thresholds
+  if (lowerQuery.includes('high salinity') || lowerQuery.includes('salty')) {
     filters.salinity.min = 35
-  } else if (query.includes('low salinity') || query.includes('fresh')) {
+  } else if (lowerQuery.includes('low salinity') || lowerQuery.includes('fresh')) {
     filters.salinity.max = 34
-  } else if (query.includes('salinity')) {
-    // General salinity query - no specific filter but indicates salinity focus
-    filters.salinity.general = true
+  } else if (lowerQuery.includes('salinity above')) {
+    const salMatch = lowerQuery.match(/salinity above ([\d.]+)/)
+    if (salMatch) filters.salinity.min = parseFloat(salMatch[1])
+  } else if (lowerQuery.includes('salinity below')) {
+    const salMatch = lowerQuery.match(/salinity below ([\d.]+)/)
+    if (salMatch) filters.salinity.max = parseFloat(salMatch[1])
   }
   
   // Time analysis
-  if (query.includes('2023')) {
-    filters.timeRange = { year: 2023 }
-  } else if (query.includes('march')) {
-    filters.timeRange = { month: 'march' }
-  } else if (query.includes('recent')) {
+  if (lowerQuery.includes('recent') || lowerQuery.includes('latest')) {
     filters.timeRange = { recent: true }
+  } else if (lowerQuery.includes('2024')) {
+    filters.timeRange = { year: 2024 }
+  } else if (lowerQuery.includes('2023')) {
+    filters.timeRange = { year: 2023 }
   }
   
+  console.log('🔍 Analyzed query filters:', filters)
   return filters
 }
 
